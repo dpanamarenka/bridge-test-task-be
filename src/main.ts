@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { WebSocketProvider, JsonRpcProvider } from 'ethers';
+import { JsonRpcProvider } from 'ethers';
 
 import { AppModule } from './app.module';
 import { AppService } from './app.service';

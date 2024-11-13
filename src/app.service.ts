@@ -37,16 +37,8 @@ export class AppService {
           tx.to &&
           tx.to.toLowerCase() === this.bridgeAddress.toLowerCase()
         ) {
-          console.log(
-            `Detected new transaction to ${this.bridgeAddress} with hash ${tx.hash}`,
-          );
-          console.log(`Sum: ${formatUnits(tx.value, 'ether')} ETH`);
-
           const receipt = await tx.wait();
           if (receipt.status === 1) {
-            console.log(
-              `Transaction submitted. Transfer funds to Core Testnet...`,
-            );
             this.websocketsService.sendMessage(Event.BRIDGE_EVENT, {
               from: tx.from,
               amount: formatUnits(tx.value, 'ether'),
@@ -63,10 +55,6 @@ export class AppService {
               txLink: `https://scan.test.btcs.network/tx/${txCore.hash}`,
               type: MessageType.SUCCESS,
             });
-
-            console.log(
-              `Funds successfully transfered to Core Testnet. Hash: ${txCore.hash}, Address: ${tx.from}`,
-            );
           }
         }
       }
@@ -91,18 +79,8 @@ export class AppService {
           tx.to &&
           tx.to.toLowerCase() === this.bridgeAddress.toLowerCase()
         ) {
-          console.log(
-            `Detected new transaction to ${this.bridgeAddress} with hash ${tx.hash}`,
-          );
-          console.log(`Sum: ${formatUnits(tx.value, 'ether')} ETH`);
-
-          throw new Error('Test error');
-
           const receipt = await tx.wait();
           if (receipt.status === 1) {
-            console.log(
-              `Transaction submitted. Transfer funds to Sepolia Testnet...`,
-            );
             this.websocketsService.sendMessage(Event.BRIDGE_EVENT, {
               from: tx.from,
               amount: formatUnits(tx.value, 'ether'),
@@ -119,10 +97,6 @@ export class AppService {
               txLink: `https://sepolia.etherscan.io/tx/${txCore.hash}`,
               type: MessageType.SUCCESS,
             });
-
-            console.log(
-              `Funds successfully transfered to Sepolia Testnet. Hash: ${txCore.hash}, Address: ${tx.from}`,
-            );
           }
         }
       }
