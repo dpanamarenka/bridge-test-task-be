@@ -1,12 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import {
-  WebSocketProvider,
-  JsonRpcProvider,
-  Wallet,
-  formatUnits,
-} from 'ethers';
+import { JsonRpcProvider, Wallet, formatUnits } from 'ethers';
 
-import { WebsocketsService, BRIDGE_EVENT } from './websockets.service';
+import { Event, MessageType } from './constants';
+import { WebsocketsService } from './websockets.service';
 
 @Injectable()
 export class AppService {
@@ -42,36 +38,45 @@ export class AppService {
           tx.to.toLowerCase() === this.bridgeAddress.toLowerCase()
         ) {
           console.log(
-            `Обнаружена транзакция на адрес ${this.bridgeAddress} с хэшем ${tx.hash}`,
+            `Detected new transaction to ${this.bridgeAddress} with hash ${tx.hash}`,
           );
-          console.log(`Сумма: ${formatUnits(tx.value, 'ether')} ETH`);
+          console.log(`Sum: ${formatUnits(tx.value, 'ether')} ETH`);
 
-          // Подождем подтверждения транзакции
           const receipt = await tx.wait();
           if (receipt.status === 1) {
             console.log(
-              `Транзакция подтверждена. Перевод средств в Core Testnet...`,
+              `Transaction submitted. Transfer funds to Core Testnet...`,
             );
-            this.websocketsService.sendMessage(BRIDGE_EVENT, {
+            this.websocketsService.sendMessage(Event.BRIDGE_EVENT, {
               from: tx.from,
               amount: formatUnits(tx.value, 'ether'),
               chain: 'Sepolia',
+              type: MessageType.BRIDGE,
             });
 
-            //   // Инициируем перевод эквивалентных средств в Core Testnet
             const txCore = await this.coreWallet.sendTransaction({
-              to: tx.from, // Используйте тот же адрес получателя или укажите нужный
-              value: tx.value, // Передаем ту же сумму
+              to: tx.from,
+              value: tx.value,
+            });
+
+            this.websocketsService.sendMessage(Event.SUCCESS_EVENT, {
+              txLink: `https://scan.test.btcs.network/tx/${txCore.hash}`,
+              type: MessageType.SUCCESS,
             });
 
             console.log(
-              `Средства отправлены в Core Testnet. Hash: ${txCore.hash}, Address: ${tx.from}`,
+              `Funds successfully transfered to Core Testnet. Hash: ${txCore.hash}, Address: ${tx.from}`,
             );
           }
         }
       }
     } catch (error) {
-      console.error('Ошибка при обработке транзакции:', error);
+      console.error('Error occured:', error);
+
+      this.websocketsService.sendMessage(Event.ERROR_EVENT, {
+        message: error?.message || JSON.stringify(error),
+        type: MessageType.ERROR,
+      });
     }
   }
 
@@ -87,36 +92,47 @@ export class AppService {
           tx.to.toLowerCase() === this.bridgeAddress.toLowerCase()
         ) {
           console.log(
-            `Обнаружена транзакция на адрес ${this.bridgeAddress} с хэшем ${tx.hash}`,
+            `Detected new transaction to ${this.bridgeAddress} with hash ${tx.hash}`,
           );
-          console.log(`Сумма: ${formatUnits(tx.value, 'ether')} ETH`);
+          console.log(`Sum: ${formatUnits(tx.value, 'ether')} ETH`);
 
-          // Подождем подтверждения транзакции
+          throw new Error('Test error');
+
           const receipt = await tx.wait();
           if (receipt.status === 1) {
             console.log(
-              `Транзакция подтверждена. Перевод средств в Sepolia Testnet...`,
+              `Transaction submitted. Transfer funds to Sepolia Testnet...`,
             );
-            this.websocketsService.sendMessage(BRIDGE_EVENT, {
+            this.websocketsService.sendMessage(Event.BRIDGE_EVENT, {
               from: tx.from,
               amount: formatUnits(tx.value, 'ether'),
               chain: 'Core',
+              type: MessageType.BRIDGE,
             });
 
-            //   // Инициируем перевод эквивалентных средств в Core Testnet
             const txCore = await this.sepoliaWallet.sendTransaction({
-              to: tx.from, // Используйте тот же адрес получателя или укажите нужный
-              value: tx.value, // Передаем ту же сумму
+              to: tx.from,
+              value: tx.value,
+            });
+
+            this.websocketsService.sendMessage(Event.SUCCESS_EVENT, {
+              txLink: `https://sepolia.etherscan.io/tx/${txCore.hash}`,
+              type: MessageType.SUCCESS,
             });
 
             console.log(
-              `Средства отправлены в Sepolia Testnet. Hash: ${txCore.hash}, Address: ${tx.from}`,
+              `Funds successfully transfered to Sepolia Testnet. Hash: ${txCore.hash}, Address: ${tx.from}`,
             );
           }
         }
       }
     } catch (error) {
-      console.error('Ошибка при обработке транзакции:', error);
+      console.error('Error occured:', error);
+
+      this.websocketsService.sendMessage(Event.ERROR_EVENT, {
+        message: error?.message || JSON.stringify(error),
+        type: MessageType.ERROR,
+      });
     }
   }
 }

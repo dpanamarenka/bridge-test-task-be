@@ -1,7 +1,6 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-
-export const BRIDGE_EVENT = 'bridge-event';
+import { Event, Message } from './constants';
 
 @WebSocketGateway({
   cors: {
@@ -15,7 +14,7 @@ export class WebsocketsService {
     console.log('WebSockets started');
   }
 
-  sendMessage(event: string, message: any) {
+  sendMessage(event: Event, message: Message) {
     this.server.emit(event, message);
   }
 }
